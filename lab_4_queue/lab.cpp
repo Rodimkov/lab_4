@@ -10,7 +10,7 @@ int main()
 	Tqueue<int> a(15);
 	for(int i = 0 ; i < 10 ; i++)
 	{
-		a.push(i);
+		a.push(i + 10);
 	}
 	for(int i = 0 ; i < 10 ; i++)
 	cout << a.pop() << endl;

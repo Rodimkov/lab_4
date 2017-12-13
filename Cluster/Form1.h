@@ -8,7 +8,6 @@ struct TTask // для создания задач
 	int stepcount; //такты
 	int process;//узлы
 	int number;//номер задачи 
-	char c;
 };
 
 
@@ -23,6 +22,8 @@ struct TProc
 		int freeproc; // число свободных процессоров
 		int stepcount; //время простоя процессоров сумарное 
 		int  N;
+		int size;
+		int sizequeue;
 		int Number;
 		int count;
 		Tqueue<TTask> task;
@@ -78,6 +79,8 @@ namespace Cluster {
 	private: System::Windows::Forms::Label^  label4;
 	private: System::Windows::Forms::Label^  label5;
 	private: System::Windows::Forms::TextBox^  textBox5;
+	private: System::Windows::Forms::TextBox^  textBox6;
+	private: System::Windows::Forms::Label^  label6;
 	private: System::ComponentModel::IContainer^  components;
 
 	private:
@@ -108,6 +111,8 @@ namespace Cluster {
 			this->label4 = (gcnew System::Windows::Forms::Label());
 			this->label5 = (gcnew System::Windows::Forms::Label());
 			this->textBox5 = (gcnew System::Windows::Forms::TextBox());
+			this->textBox6 = (gcnew System::Windows::Forms::TextBox());
+			this->label6 = (gcnew System::Windows::Forms::Label());
 			(cli::safe_cast<System::ComponentModel::ISupportInitialize^  >(this->pictureBox1))->BeginInit();
 			this->SuspendLayout();
 			// 
@@ -197,7 +202,7 @@ namespace Cluster {
 			this->textBox4->Name = L"textBox4";
 			this->textBox4->Size = System::Drawing::Size(100, 20);
 			this->textBox4->TabIndex = 9;
-			this->textBox4->Text = L"0,2";
+			this->textBox4->Text = L"0,6";
 			// 
 			// label4
 			// 
@@ -224,11 +229,29 @@ namespace Cluster {
 			this->textBox5->Size = System::Drawing::Size(100, 20);
 			this->textBox5->TabIndex = 12;
 			// 
+			// textBox6
+			// 
+			this->textBox6->Location = System::Drawing::Point(777, 349);
+			this->textBox6->Name = L"textBox6";
+			this->textBox6->Size = System::Drawing::Size(100, 20);
+			this->textBox6->TabIndex = 13;
+			// 
+			// label6
+			// 
+			this->label6->Location = System::Drawing::Point(681, 322);
+			this->label6->Name = L"label6";
+			this->label6->RightToLeft = System::Windows::Forms::RightToLeft::No;
+			this->label6->Size = System::Drawing::Size(84, 47);
+			this->label6->TabIndex = 14;
+			this->label6->Text = L"количество элементов в очереди";
+			// 
 			// Form1
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			this->ClientSize = System::Drawing::Size(905, 418);
+			this->Controls->Add(this->label6);
+			this->Controls->Add(this->textBox6);
 			this->Controls->Add(this->textBox5);
 			this->Controls->Add(this->label5);
 			this->Controls->Add(this->label4);
@@ -253,17 +276,19 @@ namespace Cluster {
 
 		cli::array<Label^>^ ls;
 
+
 	private: System::Void timer1_Tick(System::Object^  sender, System::EventArgs^  e) {
-			//textBox5->Text = Convert::ToString(Number);
+			textBox5->Text = Convert::ToString(count);
+			textBox6->Text = Convert::ToString(sizequeue);
 			clear();	
 			randtask();
 			distribution();
 			paint();
-			}
+		}
+
 
 	private: System::Void button1_Click(System::Object^  sender, System::EventArgs^  e) {
-			textBox5->Text = "0";
-			Number = 0;
+			sizequeue = Number = 0;
 			srand( time( NULL) );
 			if(button1->Text == "Start")
 			{
@@ -285,6 +310,7 @@ namespace Cluster {
 					ls[i]->Margin = System::Windows::Forms::Padding(3);
 					flowLayoutPanel1->Controls->Add(ls[i]);	
 				}
+				size = 190 / log(N+1)  ; 
 				timer1->Enabled = true;
 				timer1->Interval = 1000;
 				timer1_Tick(sender,e);
@@ -297,30 +323,33 @@ namespace Cluster {
 					delete ls[m];
 				delete []ls;
 				button1->Text = "Start";
-
 			}
 		 }
+
 
 		void randtask()
 		{
 			double p;
 			double tmp = Convert::ToDouble( textBox4->Text );
-//			srand( time( NULL) );
 			p = rand() / (double)RAND_MAX;
-			textBox5->Text = Convert::ToString(p);
 			if( p < tmp ) 
 				creatureTask();
 		}
 
+
 		void creatureTask()
 		{
-			TTask tmp;		
-			tmp.number = Number++;
-			tmp.process = rand() % Convert::ToInt64( textBox2->Text ) + 1 ;
-			tmp.stepcount = rand() % Convert::ToInt64( textBox3->Text ) + 1;
-			tmp.c = Number;
-			task.push(tmp);
+			if(!task.isfull())
+			{
+				TTask tmp;
+				sizequeue++;
+				tmp.number = Number++;
+				tmp.process = rand() % Convert::ToInt64( textBox2->Text ) + 1 ;
+				tmp.stepcount = rand() % Convert::ToInt64( textBox3->Text ) + 1;
+				task.push(tmp);
+			}
 		}
+
 
 		void paint()
 		{
@@ -329,15 +358,15 @@ namespace Cluster {
 			{
 				if ( !proc[i].free) 
 				{
-					ls[i]->Size = System::Drawing::Size( 60, 60 );
+					ls[i]->Size = System::Drawing::Size( size, size );
 					ls[i]->BackColor = System::Drawing::Color::Red; 
-					ls[i]->Text = Convert::ToString(proc[i].stepcount--) +  "\n" + Convert::ToString(proc[i].procId);
+					ls[i]->Text =  Convert::ToString(proc[i].stepcount--) +  "\n" + "номер " +  Convert::ToString(proc[i].procId);
 					ls[i]->TextAlign = System::Drawing::ContentAlignment::MiddleCenter; 
 					ls[i]->Margin = System::Windows::Forms::Padding(3);
 				}
 				else
 				{
-					ls[i]->Size = System::Drawing::Size( 60, 60 );
+					ls[i]->Size = System::Drawing::Size( size, size);
 					ls[i]->BackColor = System::Drawing::Color::Green; 
 					ls[i]->Text = "Empty";
 					ls[i]->TextAlign = System::Drawing::ContentAlignment::MiddleCenter; 
@@ -348,32 +377,44 @@ namespace Cluster {
 			}
 		}
 
+
 		void clear(){
 			for( int i = 0 ; i < N ; i++ )	
 				if(proc[i].stepcount <= 0) 
 					proc[i].free = true;
 		}
 
+
 		 void distribution()
 		 {
-			int q=0;
 			if( !(task.isempty()) )
 			{
-				TTask buf = task.pop();
+				int q=0;
+				int c = 0;
 				for( int i = 0 ; i < N ; i++ )
-				{
 					if(proc[i].free)
+						c++;
+
+				TTask buf = task.top();
+				if( c >= buf.process )
+				{
+					sizequeue--;
+					task.pop();
+					for( int i = 0 ; i < N ; i++ )
 					{
-						proc[i].free = false;
-						proc[i].procId = buf.number;
-						proc[i].stepcount =  buf.stepcount;
-						q++;
-						if( q == buf.process)
-							break;
+						if(proc[i].free)
+						{
+							proc[i].free = false;
+							proc[i].procId = buf.number;
+							proc[i].stepcount =  buf.stepcount;
+							q++;
+							if( q == buf.process)
+								break;
+						}
 					}
-				 }
-			}
-		 }
+				}
+			 }
+		  }
 };
 }
 
